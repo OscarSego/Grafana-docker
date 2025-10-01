@@ -1,0 +1,56 @@
+groups:
+- name: node_alerts
+  rules:
+  - alert: NodeDown
+    expr: up{job="node-exporter"} == 0
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Node Exporter down on {{ $labels.instance }}"
+      description: "Node Exporter has been down for more than 5 minutes."
+
+  - alert: HighCPUUsage
+    expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High CPU usage on {{ $labels.instance }}"
+      description: "CPU usage is above 80% for more than 10 minutes."
+
+  - alert: HighMemoryUsage
+    expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 5
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High Memory usage on {{ $labels.instance }}"
+      description: "Memory usage is above 80% for more than 10 minutes."
+
+  - alert: DiskSpaceLow
+    expr: (node_filesystem_size_bytes{fstype!~"tmpfs|overlay"} - node_filesystem_free_bytes{fstype!~"tmpfs|overlay"}) / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"} * 100 > 90
+    for: 15m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Low Disk Space on {{ $labels.instance }} ({{ $labels.mountpoint }})"
+      description: "Disk space usage is above 90% for more than 15 minutes."
+
+  - alert: HighNetworkTraffic
+    expr: rate(node_network_receive_bytes_total[5m]) > 10000000 or rate(node_network_transmit_bytes_total[5m]) > 10000000
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High Network Traffic on {{ $labels.instance }}"
+      description: "Network traffic exceeds 10 MB/s."
+
+  - alert: TestFileMissing
+    expr: test_file_exists{file="test.txt"} == 0
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "File test.txt missing"
+      description: "The file test.txt has been missing for more than 5 minutes."
